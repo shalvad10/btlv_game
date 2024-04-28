@@ -5,8 +5,12 @@ export default class Bamboo {
     private posX: number;
     private posY: number;
     private textureURL: string = '../../../assets/bamboo.png';
-    private bambooCont!: PIXI.Container;
+    public bambooCont!: PIXI.Container;
+    private spritesCont!: PIXI.Container;
     private bambooSprite!: PIXI.Sprite;
+    private direction: number = 1;
+    private ticker = PIXI.Ticker.shared;
+    public update: any;
 
     private textures: any;
     private bombAnimationSprite!: PIXI.AnimatedSprite;
@@ -14,35 +18,32 @@ export default class Bamboo {
     constructor(posX: number, posY: number, el: any) {
         this.posX = posX;
         this.posY = posY;
-        console.warn(el)
         this.init(el);
     }
 
     public async init(el: any) {
-        const maskCont = this.initMaskContainer(el);
         this.bambooCont = new PIXI.Container();
         this.bambooCont.position.x = this.posX;
         this.bambooCont.position.y = this.posY;
+        this.bambooCont.zIndex = 0;
+        this.spritesCont = new PIXI.Container();
         const texture = await PIXI.Assets.load(this.textureURL);
         this.bambooSprite = new PIXI.Sprite(texture);
         this.bambooSprite.anchor.set(1);
         this.bambooCont.scale = 0.25;
-        this.bambooCont.addChild(this.bambooSprite);
-        this.initBomb(this.bambooCont);
-        maskCont.addChild(this.bambooCont);
-        setTimeout(() => {
-            // this.setupAnimation();
-        }, 5000);
+        this.bambooCont.addChild(this.spritesCont);
+        this.spritesCont.addChild(this.bambooSprite);
+        this.initBomb(this.spritesCont);
+        el.addChild(this.bambooCont);
+        this.initMaskContainer(this.bambooCont);
+        setInterval(() => {
+            this.setupAnimation();
+        }, 3000);
     }
     public initMaskContainer(el: any) {
-        let mask = new PIXI.Graphics().rect(30,-20,90,110).fill(0xff0000);
-        mask.visible = true;
-        let maskContainer = new PIXI.Container();
-        maskContainer.mask = mask;
-        maskContainer.zIndex = 1;
-        maskContainer.position.set(4,4);
-        el.addChild(maskContainer);
-        return maskContainer;
+        const mask = new PIXI.Graphics().rect(-this.bambooSprite.width,50,this.bambooSprite.width,this.bambooSprite.height + 60).fill(0x2c3e50);
+        el.addChild(mask);
+        el.mask = null;
     }
 
     public initBomb(el: any) {
@@ -64,26 +65,36 @@ export default class Bamboo {
         this.textures = await PIXI.Assets.load(`../../../assets/anims/${textureName}.json`);
     }
 
+    public stopAnimation() {
+        this.ticker.remove(this.update);
+    }
 
     setupAnimation() {
-        let destinationY = 100;
+        let destinationY = this.spritesCont.position.y + (230 * this.direction);
         
-        const ticker = PIXI.Ticker.shared;
-        let duration = 60; // 60 frames at 60 frames per second (1 second)
-        let velocityY = (destinationY - this.bambooCont.y) / duration;
-        let currentEl = this.bambooCont;
+        let duration = 120; // 60 frames at 60 frames per second (1 second)
+        let velocityY = (destinationY - this.spritesCont.position.y) / duration;
+        let currentEl = this.spritesCont;
 
-        ticker.add(update);
- 
-        ticker.start();
+        let changeDirection = () => {
+            this.direction = -this.direction;
+        }
+
+        let thisTicker = () => {
+            return this.ticker;
+        }
     
-        function update() {
+        this.update = () => {
             currentEl.y += velocityY;
             if (Math.abs(currentEl.y - destinationY) < 1) {
-                    ticker.remove(update);
-                    destinationY = 0;
+                thisTicker().remove(this.update);
+                    changeDirection();
                 }
-        }       
+        }
+
+        this.ticker.add(this.update);
+ 
+        this.ticker.start();     
     }
 
 }

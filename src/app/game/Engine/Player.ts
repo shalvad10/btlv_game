@@ -2,14 +2,11 @@ import * as PIXI from 'pixi.js';
 
 export default class Player {
 
-    
-    private dieTexture =    { name: 'die', frames: 8 };
-    private winTexture =    { name: 'win', frames: 8 };
-    private moveTexture =   { name: 'run', frames: 9 };
-    private climbTexture =  { name: 'climb', frames: 8 };
-
     public posX: number;
     public posY: number;
+    public isAlive: boolean = true;
+    public wonGame: boolean = false;
+    public isClimbing: boolean = false;
     public vX: number = 0;
     public vY: number = 0;
     public containerWidth: number = 38;
@@ -34,56 +31,74 @@ export default class Player {
     }
 
     private move() {
-        this.loadTextures(this.moveTexture.name).then(
-            () => {
-                this.playerAnimatedSprite = new PIXI.AnimatedSprite(this.textures.animations[this.moveTexture.name]);
-                this.playerAnimatedSprite.loop = true;
-                this.playerAnimatedSprite.x = 0;
-                this.playerAnimatedSprite.animationSpeed = 0.3;
-                this.playerCont.addChild(this.playerAnimatedSprite);
-            }
-        );
+        setTimeout( () => {
+            this.loadTextures('run').then(
+                () => {
+                    this.playerAnimatedSprite = new PIXI.AnimatedSprite(this.textures.animations['run']);
+                    this.playerAnimatedSprite.loop = true;
+                    this.playerAnimatedSprite.animationSpeed = 0.3;
+                    this.playerCont.addChild(this.playerAnimatedSprite);
+                }
+            );
+        },10);
     }
 
     public startMoving() { this.playerAnimatedSprite.play(); }
     public stopMoving()  { this.playerAnimatedSprite.stop(); }
-    public startClimbing() { this.climb(); this.playerAnimatedSprite.play(); }
-    public stopClimbing()  { this.move(); this.playerAnimatedSprite.stop(); }
+    public startClimbing() { if(this.isClimbing == false) this.climb(); }
+    public stopClimbing()  {
+        this.isClimbing = false;
+        this.playerAnimatedSprite.stop(); 
+        this.playerCont.removeChild(this.playerAnimatedSprite);
+        if(this.wonGame == false) this.move();
+    }
+    public playerWon()  { this.wonGame = true; this.stopClimbing();this.win(); }
+    public playerDied() { this.isAlive = false; this.die(); }
 
     private die() {
-        this.loadTextures(this.dieTexture.name).then(
-            () => {
-                this.playerAnimatedSprite = new PIXI.AnimatedSprite(this.textures.animations[this.dieTexture.name]);
-                this.playerAnimatedSprite.play();
-                this.playerAnimatedSprite.loop = true;
-                this.playerAnimatedSprite.animationSpeed = 0.3;
-                this.playerCont.addChild(this.playerAnimatedSprite);
-            }
-        );
+        this.playerCont.removeChild(this.playerAnimatedSprite);
+        setTimeout( () => {
+            this.loadTextures('die').then(
+                () => {
+                    this.playerAnimatedSprite = new PIXI.AnimatedSprite(this.textures.animations['die']);
+                    this.playerCont.addChild(this.playerAnimatedSprite);
+                    this.playerAnimatedSprite.play();
+                    this.playerAnimatedSprite.loop = true;
+                    this.playerAnimatedSprite.animationSpeed = 0.3;
+                    this.playerCont.addChild(this.playerAnimatedSprite);
+                }
+            );
+        },10);
     }
 
     private climb () {
-        this.loadTextures(this.climbTexture.name).then(
-            () => {
-                this.playerAnimatedSprite = new PIXI.AnimatedSprite(this.textures.animations[this.climbTexture.name]);
-                this.playerAnimatedSprite.loop = true;
-                this.playerAnimatedSprite.x = 0;
-                this.playerAnimatedSprite.animationSpeed = 0.3;
-            }
-        );
+        this.playerCont.removeChild(this.playerAnimatedSprite);
+        this.isClimbing = true;
+        setTimeout( () => {
+            this.loadTextures('climb').then(
+                () => {
+                    this.playerAnimatedSprite = new PIXI.AnimatedSprite(this.textures.animations['climb']);
+                    this.playerAnimatedSprite.play();
+                    this.playerAnimatedSprite.loop = true;
+                    this.playerAnimatedSprite.animationSpeed = 0.3;
+                    this.playerCont.addChild(this.playerAnimatedSprite);
+                }
+            );
+        },10);
     }
 
     private win () {
-        this.loadTextures(this.winTexture.name).then(
-            () => {
-                this.playerAnimatedSprite = new PIXI.AnimatedSprite(this.textures.animations[this.winTexture.name]);
-                this.playerAnimatedSprite.play();
-                this.playerAnimatedSprite.loop = true;
-                this.playerAnimatedSprite.x = 50;
-                this.playerAnimatedSprite.animationSpeed = 0.3;
-                this.playerCont.addChild(this.playerAnimatedSprite);
-            }
-        );
+        setTimeout( () => {
+            this.loadTextures('win').then(
+                () => {
+                    this.playerAnimatedSprite = new PIXI.AnimatedSprite(this.textures.animations['win']);
+                    this.playerAnimatedSprite.play();
+                    this.playerAnimatedSprite.loop = true;
+                    this.playerAnimatedSprite.animationSpeed = 0.3;
+                    this.playerCont.addChild(this.playerAnimatedSprite);
+                }
+            );
+        },10);
     }
 
     private async loadTextures(textureName: string) {
