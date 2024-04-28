@@ -4,6 +4,8 @@ export default class Ladder {
 
     private posX: number;
     private posY: number;
+    public ladderCont!: PIXI.Container;
+    public ladderSprite!: PIXI.Sprite;
     private textureURL: string = '../../../assets/ladder.png';
     
     constructor(posX: number, posY: number, el: any) {
@@ -13,16 +15,15 @@ export default class Ladder {
     }
 
     public async init(el: any) {
-        const ladderCont = new PIXI.Container();
-        ladderCont.position.x = this.posX;
-        ladderCont.position.y = this.posY;
+        this.ladderCont = new PIXI.Container();
+        this.ladderCont.position.x = this.posX;
+        this.ladderCont.position.y = this.posY;
         const texture = await PIXI.Assets.load(this.textureURL);
-        const ladderSprite = new PIXI.Sprite(texture);
-        ladderSprite.anchor.set(0.5);
-        ladderCont.scale = 0.4;
-        ladderCont.zIndex=0;
-        ladderCont.addChild(ladderSprite);
-        el.addChild(ladderCont);
+        this.ladderSprite = new PIXI.Sprite(texture);
+        this.ladderCont.scale = 0.5;
+        this.ladderCont.zIndex=1;
+        this.ladderCont.addChild(this.ladderSprite);
+        el.addChild(this.ladderCont);
     }
 
 }

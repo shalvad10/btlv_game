@@ -8,50 +8,49 @@ export default class Player {
     private moveTexture =   { name: 'run', frames: 9 };
     private climbTexture =  { name: 'climb', frames: 8 };
 
-    private posX: number;
-    private posY: number;
-    private playerCont!: PIXI.Container;
-    private playerAnimatedSprite!: PIXI.AnimatedSprite;
+    public posX: number;
+    public posY: number;
+    public vX: number = 0;
+    public vY: number = 0;
+    public containerWidth: number = 38;
+    public containerHeight: number = 47;
+    public playerScale: number = 1.2;
+    public playerCont!: PIXI.Container;
+    public playerAnimatedSprite!: PIXI.AnimatedSprite;
     private textures: any;
     
     constructor(posX: number, posY: number, el: any) {
         this.posX = posX;
         this.posY = posY;
-        this.init(el).then(
-            () => {
-                this.win();
-                this.die();
-                this.climb();
-                this.move();
-            }
-        );
-    }
-
-    public async init(el: any) {
         this.playerCont = new PIXI.Container();
-        this.playerCont.width = 100;
-        this.playerCont.height = 100;
-        this.playerCont.position.x = this.posX;
+        this.playerCont.width = this.containerWidth;
+        this.playerCont.height = this.containerHeight;
+        this.playerCont.scale.set(this.playerScale);
+        this.playerCont.position.x = 0;
         this.playerCont.position.y = this.posY;
-        this.playerCont.zIndex=1;
+        this.playerCont.zIndex=2;
+        this.move();
         el.addChild(this.playerCont);
     }
 
-
-    public move() {
+    private move() {
         this.loadTextures(this.moveTexture.name).then(
             () => {
                 this.playerAnimatedSprite = new PIXI.AnimatedSprite(this.textures.animations[this.moveTexture.name]);
-                this.playerAnimatedSprite.play();
                 this.playerAnimatedSprite.loop = true;
-                this.playerAnimatedSprite.x = 150;
+                this.playerAnimatedSprite.x = 0;
                 this.playerAnimatedSprite.animationSpeed = 0.3;
                 this.playerCont.addChild(this.playerAnimatedSprite);
             }
         );
     }
 
-    public async die() {
+    public startMoving() { this.playerAnimatedSprite.play(); }
+    public stopMoving()  { this.playerAnimatedSprite.stop(); }
+    public startClimbing() { this.climb(); this.playerAnimatedSprite.play(); }
+    public stopClimbing()  { this.move(); this.playerAnimatedSprite.stop(); }
+
+    private die() {
         this.loadTextures(this.dieTexture.name).then(
             () => {
                 this.playerAnimatedSprite = new PIXI.AnimatedSprite(this.textures.animations[this.dieTexture.name]);
@@ -63,20 +62,18 @@ export default class Player {
         );
     }
 
-    public climb () {
+    private climb () {
         this.loadTextures(this.climbTexture.name).then(
             () => {
                 this.playerAnimatedSprite = new PIXI.AnimatedSprite(this.textures.animations[this.climbTexture.name]);
-                this.playerAnimatedSprite.play();
                 this.playerAnimatedSprite.loop = true;
-                this.playerAnimatedSprite.x = 100;
+                this.playerAnimatedSprite.x = 0;
                 this.playerAnimatedSprite.animationSpeed = 0.3;
-                this.playerCont.addChild(this.playerAnimatedSprite);
             }
         );
     }
 
-    public win () {
+    private win () {
         this.loadTextures(this.winTexture.name).then(
             () => {
                 this.playerAnimatedSprite = new PIXI.AnimatedSprite(this.textures.animations[this.winTexture.name]);
@@ -88,7 +85,6 @@ export default class Player {
             }
         );
     }
-
 
     private async loadTextures(textureName: string) {
         this.textures = await PIXI.Assets.load(`../../../assets/anims/${textureName}.json`);

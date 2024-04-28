@@ -1,13 +1,16 @@
 import * as PIXI from 'pixi.js';
+import Bamboo from './Bamboo';
 
 export default class Ground {
 
     private posX!: number;
     private posY!: number;
-    private groundCont!: PIXI.Container;
+    public groundCont!: PIXI.Container;
     private textureURL: string = '../../../assets/ground.png';
+    public groundIndex!: number;
 
-    constructor(posX: number, posY: number, el: any) {
+    constructor(posX: number, posY: number, index: number, el: any) {
+        this.groundIndex = index;
         this.posX = posX;
         this.posY = posY;
         this.init(el);
@@ -20,12 +23,14 @@ export default class Ground {
         this.groundCont.height = 100;
         this.groundCont.position.x = this.posX;
         this.groundCont.position.y = this.posY;
-        this.groundCont.zIndex=0;
+        this.groundCont.zIndex = 0;
         const texture = await PIXI.Assets.load(this.textureURL);
         const groundSprite = new PIXI.Sprite(texture);
         groundSprite.width = window.innerWidth/2 + 10;
         groundSprite.scale.y = 0.7;
         this.groundCont.addChild(groundSprite);
         el.addChild(this.groundCont);
+
+        // const bamboo = new Bamboo(this.posX+100,0,this.groundCont);
     }
 }
