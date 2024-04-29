@@ -30,75 +30,83 @@ export default class Player {
         el.addChild(this.playerCont);
     }
 
+    public startMoving() { this.playerAnimatedSprite?.play(); }
+    public stopMoving()  { this.playerAnimatedSprite?.stop(); }
+    public startClimbing() { if(this.isClimbing == false) this.climb(); }
+    public stopClimbing()  {
+        this.isClimbing = false;
+        this.playerAnimatedSprite.stop();
+        this.playerCont.removeChild(this.playerAnimatedSprite);
+        if(this.wonGame == false) this.move();
+    }
+    public playerWon()  { this.win(); }
+    public playerDied() {
+        this.playerAnimatedSprite.stop();
+        this.playerCont.removeChild(this.playerAnimatedSprite);
+        setTimeout(() => {
+            this.die();
+        }, 10);
+    }
+
     private move() {
-        setTimeout( () => {
-            this.loadTextures('run').then(
-                () => {
+        this.loadTextures('run').then(
+            () => {
+                setTimeout( () => {
                     this.playerAnimatedSprite = new PIXI.AnimatedSprite(this.textures.animations['run']);
                     this.playerAnimatedSprite.loop = true;
                     this.playerAnimatedSprite.animationSpeed = 0.3;
                     this.playerCont.addChild(this.playerAnimatedSprite);
-                }
-            );
-        },10);
+                },10);
+            }
+        );
     }
-
-    public startMoving() { this.playerAnimatedSprite.play(); }
-    public stopMoving()  { this.playerAnimatedSprite.stop(); }
-    public startClimbing() { if(this.isClimbing == false) this.climb(); }
-    public stopClimbing()  {
-        this.isClimbing = false;
-        this.playerAnimatedSprite.stop(); 
-        this.playerCont.removeChild(this.playerAnimatedSprite);
-        if(this.wonGame == false) this.move();
-    }
-    public playerWon()  { this.wonGame = true; this.stopClimbing();this.win(); }
-    public playerDied() { this.isAlive = false; this.die(); }
 
     private die() {
         this.playerCont.removeChild(this.playerAnimatedSprite);
-        setTimeout( () => {
+        this.isAlive = false;
             this.loadTextures('die').then(
                 () => {
-                    this.playerAnimatedSprite = new PIXI.AnimatedSprite(this.textures.animations['die']);
-                    this.playerCont.addChild(this.playerAnimatedSprite);
-                    this.playerAnimatedSprite.play();
-                    this.playerAnimatedSprite.loop = true;
-                    this.playerAnimatedSprite.animationSpeed = 0.3;
-                    this.playerCont.addChild(this.playerAnimatedSprite);
+                    setTimeout( () => {
+                        this.playerAnimatedSprite = new PIXI.AnimatedSprite(this.textures.animations['die']);
+                        this.playerAnimatedSprite.play();
+                        this.playerAnimatedSprite.loop = false;
+                        this.playerAnimatedSprite.animationSpeed = 0.3;
+                        this.playerCont.addChild(this.playerAnimatedSprite);
+                    },10);
                 }
             );
-        },10);
     }
 
     private climb () {
         this.playerCont.removeChild(this.playerAnimatedSprite);
         this.isClimbing = true;
-        setTimeout( () => {
-            this.loadTextures('climb').then(
-                () => {
+        this.loadTextures('climb').then(
+            () => {
+                setTimeout( () => {
                     this.playerAnimatedSprite = new PIXI.AnimatedSprite(this.textures.animations['climb']);
                     this.playerAnimatedSprite.play();
                     this.playerAnimatedSprite.loop = true;
                     this.playerAnimatedSprite.animationSpeed = 0.3;
                     this.playerCont.addChild(this.playerAnimatedSprite);
-                }
-            );
-        },10);
+                },10);
+            }
+        );
     }
 
     private win () {
-        setTimeout( () => {
-            this.loadTextures('win').then(
-                () => {
+        this.playerCont.removeChild(this.playerAnimatedSprite);
+        this.wonGame = true;
+        this.loadTextures('win').then(
+            () => {
+                setTimeout( () => {
                     this.playerAnimatedSprite = new PIXI.AnimatedSprite(this.textures.animations['win']);
                     this.playerAnimatedSprite.play();
                     this.playerAnimatedSprite.loop = true;
                     this.playerAnimatedSprite.animationSpeed = 0.3;
                     this.playerCont.addChild(this.playerAnimatedSprite);
-                }
-            );
-        },10);
+                },10);
+            }
+        );
     }
 
     private async loadTextures(textureName: string) {

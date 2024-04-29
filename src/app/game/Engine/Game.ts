@@ -40,7 +40,7 @@ export default class Game {
         this.generateComponents();
         this.game.ticker.add(this.downPlayer, this);
         this.game.ticker.start();
-        document.addEventListener('keydown', (ev: any) => { 
+        document.addEventListener('keydown', (ev: any) => {
             if (this.player.isAlive == false || this.player.wonGame) return;
             if (ev.key == 'ArrowLeft') {
                 if(this.player.isClimbing) return;
@@ -68,6 +68,7 @@ export default class Game {
             if (ev.key == 'ArrowUp') {
                 if (!this.canClimb()) {
                     this.player.vY = -this.jumpSpeed;
+                    if ((this.player.playerCont.position.x + this.player.playerCont.width >= this.game.stage.width) || this.player.playerCont.position.x <= 0) { this.player.vX = 0; this.player.stopMoving(); return; }
                     this.game.ticker.add(this.downPlayer, this);
                 } else {
                     this.player.vY = -this.moveSpeed;
@@ -79,8 +80,10 @@ export default class Game {
         })
         document.addEventListener('keyup', (ev: any) => {
             if (ev.key == 'ArrowLeft' || ev.key == 'ArrowRight') {
-                this.player.stopMoving();
-                this.game.ticker.remove(this.movePlayer, this);
+                if (this.player.isAlive) {
+                    this.player.stopMoving();
+                    this.game.ticker.remove(this.movePlayer, this);
+                }
             }
         })
     }
@@ -91,19 +94,11 @@ export default class Game {
         for (let i = 0; i < this.groundsArr.length; i++) {
             oldPos = 900 / (i+2);
             for(let j=0; j<i+1; j++) {
-                this.bamboos.push(
-                    new Bamboo(
-                        oldPos * (j+1),this.groundsArr[i].y, this.game.stage
-                    )
-                );
+                this.bamboos.push( new Bamboo( oldPos * (j+1),this.groundsArr[i].y, i, this.game.stage ) );
             }
-            this.grounds.push(
-                new Ground(this.groundsArr[i].x,this.groundsArr[i].y, i, this.game.stage)
-            );
+            this.grounds.push( new Ground(this.groundsArr[i].x,this.groundsArr[i].y, i, this.game.stage) );
             if (this.ladders.length < this.groundsArr.length-1) {
-                this.ladders.push(
-                    new Ladder(i%2 != 0 ? this.groundsArr[i].x + 50 : this.game.canvas.width - 100 ,this.groundsArr[i].y - 110, this.game.stage)
-                );
+                this.ladders.push( new Ladder(i%2 != 0 ? this.groundsArr[i].x + 50 : this.game.canvas.width - 100 ,this.groundsArr[i].y - 110, this.game.stage) );
             }
         }
     }
@@ -120,15 +115,12 @@ export default class Game {
         
         this.player.playerCont.position.x += this.player.vX;
         this.player.playerCont.position.y += this.player.vY;
+        const tmpArr = this.bamboos.filter(gr => gr.groundIndex == this.activeGroundIndex);
+        this.bambooColision(tmpArr)
         
         if (this.player.playerCont.position.y + (this.player.containerHeight * this.player.playerScale) >= this.grounds[this.activeGroundIndex].groundCont.y) {
             this.game.ticker.remove(this.downPlayer, this);
         }
-    }
-
-    public playerDied() {
-        this.bamboos[this.activeGroundIndex].stopAnimation();
-        this.player.playerDied();
     }
     public movePlayer() {
         this.player.vY = this.player.vY;
@@ -136,23 +128,39 @@ export default class Game {
         
         this.player.playerCont.position.x += this.player.vX;
         this.player.playerCont.position.y += this.player.vY;
-        // if (this.bambooColision()) {
-        //     this.game.ticker.remove(this.movePlayer, this);
-        //     this.playerDied();
-        // }
+        const tmpArr = this.bamboos.filter(gr => gr.groundIndex == this.activeGroundIndex);
+        this.bambooColision(tmpArr)
+
         if(this.canClimb() && this.player.playerCont.position.y <= this.grounds[this.activeGroundIndex+1].groundCont.position.y - this.grounds[this.activeGroundIndex+1].groundCont.height) {
             this.player.stopClimbing();
             this.activeGroundIndex++;
-            if (this.checkForWin()) {
+            if (this.checkForWin() && this.player.wonGame == false) {
                 this.player.playerWon();
             }
         }
-        this.game.ticker.remove(this.movePlayer, this);
+        if(this.player.isAlive) {
+            this.game.ticker.remove(this.movePlayer, this);
+        }
     }
 
-    public bambooColision() {
-        return this.player.playerCont.position.x + this.player.playerCont.width >= this.bamboos[this.activeGroundIndex].bambooCont.position.x && 
-        this.player.playerCont.position.x + this.player.playerCont.width <= this.bamboos[this.activeGroundIndex].bambooCont.position.x + this.bamboos[this.activeGroundIndex].bambooCont.width;
+    public playerDied() {
+        this.player.playerDied();
+    }
+
+    public bambooColision(newArr: any[]) {
+        const playerX = this.player.playerCont.position.x;
+        const playerWidth = this.player.playerCont.width;
+        let isCollision = false;
+        for(let i=0; i<newArr.length; i++) {
+            isCollision = newArr[i].isUp &&
+            playerX + playerWidth >= newArr[i].posX &&
+            playerX + playerWidth <= newArr[i].posX + newArr[i].bambooCont.width;
+            if (isCollision && !newArr[i].bombExploded) {
+                newArr[i].explodeBomb();
+                this.playerDied();
+                this.game.stage.removeChild(newArr[i]);
+            }
+        }
     }
 
     public checkForWin() {

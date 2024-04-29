@@ -2,20 +2,24 @@ import * as PIXI from 'pixi.js';
 
 export default class Bamboo {
 
-    private posX: number;
-    private posY: number;
+    public posX: number;
+    public posY: number;
     private textureURL: string = '../../../assets/bamboo.png';
     public bambooCont!: PIXI.Container;
     private spritesCont!: PIXI.Container;
     private bambooSprite!: PIXI.Sprite;
     private direction: number = 1;
-    private ticker = PIXI.Ticker.shared;
+    public isUp: boolean = true;
+    public bombExploded: boolean = false;
+    private ticker = new PIXI.Ticker;
     public update: any;
+    public groundIndex!: number;
 
     private textures: any;
     private bombAnimationSprite!: PIXI.AnimatedSprite;
     
-    constructor(posX: number, posY: number, el: any) {
+    constructor(posX: number, posY: number, groundIndex: number, el: any) {
+        this.groundIndex = groundIndex;
         this.posX = posX;
         this.posY = posY;
         this.init(el);
@@ -25,7 +29,7 @@ export default class Bamboo {
         this.bambooCont = new PIXI.Container();
         this.bambooCont.position.x = this.posX;
         this.bambooCont.position.y = this.posY;
-        this.bambooCont.zIndex = 0;
+        this.bambooCont.zIndex = -1;
         this.spritesCont = new PIXI.Container();
         const texture = await PIXI.Assets.load(this.textureURL);
         this.bambooSprite = new PIXI.Sprite(texture);
@@ -50,8 +54,7 @@ export default class Bamboo {
         this.loadTextures('bomb').then(
             () => {
                 this.bombAnimationSprite = new PIXI.AnimatedSprite(this.textures.animations['bomb-anim']);
-                // this.bombAnimationSprite.play();
-                this.bombAnimationSprite.loop = true;
+                this.bombAnimationSprite.loop = false;
                 this.bombAnimationSprite.x = -115;
                 this.bombAnimationSprite.y = -325;
                 this.bombAnimationSprite.scale.set(0.9);
@@ -61,12 +64,20 @@ export default class Bamboo {
         );
     }
 
-    private async loadTextures(textureName: string) {
-        this.textures = await PIXI.Assets.load(`../../../assets/anims/${textureName}.json`);
+    public explodeBomb() {
+        this.bombExploded = true;
+        this.bombAnimationSprite.play();
+        this.spritesCont.position.y = 0;
+        setTimeout(() => {
+            if (this.ticker) {
+                this.ticker.stop();
+                this.ticker.destroy();
+            }
+        }, 10);
     }
 
-    public stopAnimation() {
-        this.ticker.remove(this.update);
+    private async loadTextures(textureName: string) {
+        this.textures = await PIXI.Assets.load(`../../../assets/anims/${textureName}.json`);
     }
 
     setupAnimation() {
@@ -79,6 +90,9 @@ export default class Bamboo {
         let changeDirection = () => {
             this.direction = -this.direction;
         }
+        let changeHeight = (val: boolean) => {
+            this.isUp = val;
+        }
 
         let thisTicker = () => {
             return this.ticker;
@@ -86,15 +100,26 @@ export default class Bamboo {
     
         this.update = () => {
             currentEl.y += velocityY;
+            if (this.direction > 0) {
+                if (destinationY - currentEl.y < destinationY - Math.abs(currentEl.y / 2) && this.isUp !== false) {
+                    changeHeight(false);
+                }
+            } else {
+                if (currentEl.y - destinationY > currentEl.y - Math.abs(destinationY / 2) && this.isUp !== true) {
+                    changeHeight(true);
+                }
+            }
             if (Math.abs(currentEl.y - destinationY) < 1) {
                 thisTicker().remove(this.update);
-                    changeDirection();
-                }
+                changeDirection();
+            }
         }
 
-        this.ticker.add(this.update);
- 
-        this.ticker.start();     
+        if (this.ticker && !this.bombExploded) {
+            this.ticker.add(this.update);
+     
+            this.ticker.start(); 
+        }    
     }
 
 }
